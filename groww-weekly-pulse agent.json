@@ -1,0 +1,465 @@
+{
+  "name": "groww-weekly-pulse agent",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        0
+      ],
+      "id": "76de71cc-e260-4240-9aaa-bca783b507b6",
+      "name": "When chat message received",
+      "webhookId": "2f6414cb-cafa-4caa-8819-992364991016"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ JSON.stringify($json) }}",
+        "options": {
+          "systemMessage": "You are a product analyst assistant for the Groww app. You receive one JSON object with: date; stats (total, tagged, counts per theme, top_themes, feeCount, quotes, feeQuotes); and official_pages (two sources, each with url and text).\n\nSTEP 1 - Weekly product pulse, 250 words or fewer:\n- Summary of the top three themes with their review counts\n- Exactly 3 supporting quotes, each with its review_id: 2 from stats.quotes, and 1 from stats.feeQuotes that best shows users confused about charges or deductions\n- One key observation (what is going wrong or trending)\n- 3 action ideas for the product team\n\nSTEP 2 - Fee issue and explainer:\n- From stats.feeQuotes and stats.feeCount, name the one fee issue users are most confused about.\n- Write a fee explainer: 6 bullet points or fewer, neutral and facts-only, using only the text in official_pages. Include both source URLs. End with \"Last checked: <date>\" using the date field.\n\nSTEP 3 - Show both outputs, then call the tools in this order:\n1. append_to_log with: date, top_themes, weekly_pulse, identified_fee_issue, explanation_bullets, source_links\n2. create_email_draft with subject \"Weekly Product Pulse + Customer Clarification - <date>\" and a body with the pulse followed by the fee explainer as a reusable support snippet.\n\nRULES:\n- Quotes: copy exactly from a candidate review; a short complete sentence or clause under 25 words; never text that ends mid-word; complaints only.\n- Never invent numbers, quotes or fee facts. Leave out anything the official pages do not support.\n- Explain only charges listed on the official pages. Do not explain price slippage or withdrawal delays. Do not state any minimum debit-value threshold for DP charges.\n- Both tools need human approval. If a call is denied, do not retry; reply that it was not approved and stop.\n- Write the weekly pulse and the fee explainer ONCE. Pass the exact same text to both tool calls. Do not rewrite, shorten or reword it between calls.\n- Write amounts as \"Rs.\" and never use the ₹ symbol.\n- The fee explainer must explain what makes up the total deducted on a typical equity trade: brokerage, STT, stamp duty, exchange transaction charges, SEBI turnover charge, DP charges on delivery sells, and GST. Give each rate and whether it applies on the buy or sell side, taken only from the official pages. Combine items where needed to stay within 6 bullets.\n- Do not include MTF, delayed payment or other charges in the explainer unless a review above is about them.\n- If the official pages do not list a charge on cancelled or unexecuted orders, say so plainly in one bullet: \"The official pages reviewed do not list a charge on cancelled or unexecuted orders.\"\n- Use neutral third-person wording. Never say \"our\", \"we\" or \"us\".\n- Never send an email. Only create drafts.\n- Write the weekly pulse and the fee explainer ONCE. Pass the exact same text to both tool calls. Do not rewrite, shorten or reword it between calls.\n- Write amounts as \"Rs.\" and never use the ₹ symbol.\n- The fee explainer must explain what makes up the total deducted on a typical equity trade: brokerage, STT, stamp duty, exchange transaction charges, SEBI turnover charge, DP charges on delivery sells, and GST. Give each rate and whether it applies on the buy or sell side, taken only from the official pages. Combine items where needed to stay within 6 bullets.\n- Leave out MTF, delayed payment and other charges unless a review above is about them.\n- If the official pages do not list a charge on cancelled or unexecuted orders, say so in one bullet: \"The official pages reviewed do not list a charge on cancelled or unexecuted orders.\"\n- Use neutral third-person wording. Never say \"our\", \"we\" or \"us\".\n- Never write placeholders such as \"(see separate stored snippet)\". Write the full explanation bullets in every tool call.\n- Do not include headings such as \"STEP 1\" or \"STEP 2\" in anything passed to a tool.\n- Begin the append_to_log text with a line \"==== <date> ====\" and end it with a blank line, so entries are separated in the log.\n- In the GST bullet, list only: brokerage, DP charges, exchange transaction charges and SEBI turnover charge. Describe DP charges only as \"per sell transaction on delivery trades\".\n- State the identified fee issue as: \"Users cannot tell what makes up the total deducted on a trade beyond the quoted brokerage (statutory taxes and other charges).\" Mention cancelled-order charges only as a secondary note, and say the official pages reviewed do not list such a charge.\n- Every action idea must follow from the themes or the fee confusion shown in the data. Do not propose product changes that no quoted review supports.\n- In the DP charges bullet, do not write \"Rs.0 for debit value\" or any debit-value threshold.\n- Do not add a sign-off, name, \"Regards\" or \"Support Snippet\" to the email body. The email body must not start with the \"====\" date line; that line belongs only in the doc entry."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1920,
+        576
+      ],
+      "id": "5a504ed4-3d90-4957-9b11-12330128c845",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1808,
+        784
+      ],
+      "id": "051fdff9-ad8d-4289-bd83-d94cc61bcfcf",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        1968,
+        768
+      ],
+      "id": "47c31159-fc85-4154-8b79-e6f928e48c68",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://dhivyalakshmi.app.n8n.cloud/mcp/fe79e86a-8e1c-4113-a16b-e30fc06deabf",
+        "include": "selected",
+        "includeTools": [
+          "Update_a_document_in_Google_Docs"
+        ],
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.4,
+      "position": [
+        2144,
+        928
+      ],
+      "id": "b7d29a9f-0b40-4505-81f7-463c4e9232c7",
+      "name": "MCP Client"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1gwkahH_ldaInXymoiKX0lCHjzq3JVaEaQcYrHDlitIU",
+          "mode": "list",
+          "cachedResultName": "groww_reviews_12wk_raw",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1gwkahH_ldaInXymoiKX0lCHjzq3JVaEaQcYrHDlitIU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 211332918,
+          "mode": "list",
+          "cachedResultName": "groww_reviews_12wk_raw",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1gwkahH_ldaInXymoiKX0lCHjzq3JVaEaQcYrHDlitIU/edit#gid=211332918"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        224,
+        0
+      ],
+      "id": "ffd65f03-ecef-4476-8823-dadd34ae6c3b",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "hqYPdR8vxN1YPl11",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Classify each numbered Google Play review of the Groww app into exactly ONE theme code:\n1 = Support (slow or unreachable customer care)\n2 = Performance & trading reliability (orders, crashes, slowness, wrong prices)\n3 = Charges & transparency (brokerage, deductions, hidden or unexpected fees)\n4 = Money movement & account access (withdrawals, payments, UPI, KYC, login, blocked accounts)\n5 = App experience & features (interface, updates, navigation, missing features)\n6 = General praise / other (positive with nothing specific, or fits none)\nIf a review touches several, choose its most prominent point.\nReturn ONLY pairs in the form number:code separated by commas, for every review, with no other text.\nExample: 1:3,2:6,3:1\n\nReviews:\n{{ $json.text }}",
+        "messages": {
+          "messageValues": []
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        672,
+        0
+      ],
+      "id": "443510f2-e0f5-44a5-906d-45059352d1b8",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        608,
+        128
+      ],
+      "id": "01db171c-d6c8-4fbc-9849-d65515fc4bfa",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(i => i.json);\nconst text = rows.map((r, i) => `${i + 1}: ${String(r.review).replace(/\\s+/g, ' ').trim()}`).join('\\n');\nreturn [{ json: { text, total: rows.length, rows } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ],
+      "id": "c949e890-065f-453d-a2cc-c2b38e7ade1a",
+      "name": "Prepare"
+    },
+    {
+      "parameters": {
+        "jsCode": "const tags = $json.text.trim();\nconst rows = $('Prepare').first().json.rows;\nconst names = {1:'Support',2:'Performance & trading reliability',3:'Charges & transparency',4:'Money movement & account access',5:'App experience & features',6:'General praise / other'};\nconst map = {};\ntags.split(/[,\\n]+/).forEach(p => { const m = p.trim().match(/^(\\d+)\\s*:\\s*([1-6])$/); if (m) map[+m[1]] = +m[2]; });\nconst counts = {1:0,2:0,3:0,4:0,5:0,6:0}, by = {1:[],2:[],3:[],4:[],5:[],6:[]};\nrows.forEach((r, i) => { const t = map[i + 1]; if (!t) return; counts[t]++; by[t].push({review_id: r.review_id, text: String(r.review), votes: +r.helpful_votes || 0, rating: +r.rating}); });\nconst tagged = Object.values(counts).reduce((a, b) => a + b, 0);\nconst top = [1,2,3,4,5].sort((a, b) => counts[b] - counts[a]).slice(0, 3);\nconst quotes = top.flatMap(t => by[t].filter(x => x.rating <= 2 && x.text.length >= 80 && x.text.length <= 300).sort((a, b) => b.votes - a.votes).slice(0, 3).map(x => ({theme: names[t], ...x})));\nconst feeRe = /brokera|charge|\\bfees?\\b|commission|deduct|hidden|\\bgst\\b|\\bstt\\b|stamp duty|ddpi|taxes/i;\nconst feeCount = rows.filter(r => feeRe.test(String(r.review))).length;\nconst confuseRe = /external|hidden|deduct|understand|unclear|not clear|transparen|extra money|unnecessary|what kind of/i;\nconst feeQuotes = rows.filter(r => +r.rating <= 2 && feeRe.test(String(r.review)) && confuseRe.test(String(r.review))).sort((a, b) => (+b.helpful_votes || 0) - (+a.helpful_votes || 0)).slice(0, 12).map(r => ({ review_id: r.review_id, text: String(r.review).slice(0, 300) }));\nreturn [{ json: { total: rows.length, tagged, counts: Object.fromEntries(Object.entries(counts).map(([k, v]) => [names[k], v])), top_themes: top.map(t => names[t]), feeCount, quotes, feeQuotes } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1184,
+        144
+      ],
+      "id": "656d5b6e-841c-4b2e-9158-1dfc6185a1b1",
+      "name": "Stats"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f5f7f04c-1069-4eea-8072-eef383b06073",
+              "name": "text",
+              "value": "Source: NSE India, \"SEBI Turnover Fees, STT and Other levies\" page (shows \"Updated on: 17/04/2026\").SEBI Turnover fees Sr. No.\tNature of securities\tRate of Fee 1.\tAll sale and purchase transactions in securities other than debt securities\t0.0001 per cent of the price at which the securities are purchased or sold (Rs.10 per crore) 2\tAll sale and purchase transactions in debt securities\t0.000025 per cent of the price at which the securities are purchased or sold (Rs.2.5 per crore) Stamp Duty Type of Security\tApplicable Stamp Duty Rate\tApplicable on Transfer of Security other than debenture on delivery basis\t0.015%\tBuyer Transfer of Security other than debenture on non-delivery basis\t0.003%\tBuyer Transfer of Debentures\t0.0001%\tBuyer Derivatives – Equity Futures\t0.002%\tBuyer Derivatives – Equity Options\t0.003%\tBuyer Currency and interest rate derivatives\t0.0001%\tBuyer Transfer of Corporate Bonds\t0.0001%\tBuyer Transfer of Securitized Debt\t0.0001%\tBuyer Transfer of Commercial Papers\t0.0001%\tBuyer Transfer of Certificate of Deposits\t0.0001%\tBuyer Repo transaction\t0.00001%\tBorrower (Buyer of forward leg) Transfer of Government Securities\t0%\tNA Transfer of Security other than debenture on delivery basis -  OFS, Tender-Offers for Takeovers, Buy Back and Delisting of Securities)\t0.015%\tOfferor (seller) Commodity Futures\t0.002%\tBuyer The Finance Act, 2019 (No. 7 of 2019) has introduced amendment in The Indian Stamp Act, 1899, with respect to levy and collection of stamp duty for transaction in securities made through stock exchange and accordingly with effect from July 1, 2020, being the notified date, stamp duty is levied and collected by Clearing Corporations authorised by Stock Exchanges.  Goods and Service Tax (GST) Category\tTax Rate\tPayable By Stock brokers Services\t18.00% (GST)\tBrokers and collected from their clients. Securities Transaction Tax (STT) SR. NO.\tTAXABLE SECURITIES TRANSACTION\tRATES W.E.F. APRIL 1, 2026\tRATES UPTO MARCH 31, 2026\tPAYABLE BY 1\tPurchase of an equity share in a company or a unit of a business trust, where such contract is settled by the actual delivery or transfer of such share or unit.\t0.100 per cent\t0.100 per cent\tPurchaser- on the value of taxable securities transaction based on the volume weighted average price.  \tPurchase of a unit of an equity oriented fund, where such contract is settled by the actual delivery or transfer of such share or unit.\tNIL\tNIL\tNA 2\tSale of an equity share in a company or a unit of a business trust, where such contract is settled by the actual delivery or transfer of such share or unit\t0.100 per cent\t0.100 per cent\tSeller - on the value of taxable securities transaction based on the volume weighted average price.  \tSale of a unit of an equity oriented fund, where such contract is settled by the actual delivery or transfer of such share or unit\t0.001 per cent\t0.001 per cent\tSeller - on the value of taxable securities transaction based on the volume weighted average price. 3\tSale of an equity share in a company or a unit of an equity oriented fund or a unit of a business trust, where such contract is settled otherwise than by the actual delivery or transfer of such share or unit.\t0.025 per cent\t0.025 per cent\tSeller - on the value of taxable securities transaction based on the volume weighted average price. 4a\tSale of an option in securities\t0.15 per cent\t0.10 per cent\tSeller - on the option premium. 4b\tSale of an option in securities, where option is exercised\t0.15 per cent\t0.125 per cent\tPurchaser - On Intrinsic value w.e.f. 01.09.2019 (prior to Septemebr 1, 2019  -on the settlement price) 4c\tSale of a futures in securities\t0.05 per cent\t0.02 per cent\tSeller - on the price at which such futures is traded. Futher as per SEBI guidelines FII's are required to settle the transactions by delivery only and therefore sr. no.3 of the above table is not applicable in case of FIIs  The above information provided is for a general guidance only. However, in view of the specific nature of the transactions and its tax implications, FII’s are advised to consult their own tax advisors with respect to the specific tax implications arising out of India.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1744,
+        176
+      ],
+      "id": "f9f15e3f-62e7-49c6-ae18-f0215b529b92",
+      "name": "NSE_Text"
+    },
+    {
+      "parameters": {
+        "jsCode": "const clean = h => String(h || '').replace(/<script[\\s\\S]*?<\\/script>/gi, ' ').replace(/<style[\\s\\S]*?<\\/style>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ').replace(/\\s+/g, ' ').trim();\nconst fromAnchor = (t, a, n = 3200) => { const i = t.indexOf(a); const s = i >= 0 ? i : 0; return t.slice(s, s + n); };\nconst stats = $('Stats').first().json;\nconst p1 = fromAnchor(clean($('Page1').first().json.data), 'Equity Brokerage');\nconst p2 = String($('NSE_Text').first().json.text || '').replace(/\\s+/g, ' ').trim();\nreturn [{ json: {\n  date: $now.toFormat('yyyy-MM-dd'),\n  stats,\n  official_pages: [\n    { url: 'https://groww.in/pricing', text: p1 },\n    { url: 'https://www.nseindia.com/static/invest/first-time-investor-sebi-turnover-fees-stt-other-levies', text: p2 }\n  ]\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1968,
+        176
+      ],
+      "id": "c26d6bfe-5b18-4867-b2ce-6f005d6d1c94",
+      "name": "Bundle"
+    },
+    {
+      "parameters": {
+        "url": "https://groww.in/pricing",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1520,
+        176
+      ],
+      "id": "5577252b-5e10-430b-b392-61ae35e9dc7b",
+      "name": "Page1"
+    },
+    {
+      "parameters": {
+        "message": "=The agent wants to run {{ $tool.name }} with these inputs: {{ JSON.stringify($tool.parameters) }}.",
+        "sendTo": "divyarocks121@gmail.com",
+        "subject": "= {{ $tool.name }}. ",
+        "approvalOptions": {
+          "values": {
+            "approvalType": "double"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailHitlTool",
+      "typeVersion": 2.2,
+      "position": [
+        2256,
+        720
+      ],
+      "id": "0c71d8e3-35af-4aa4-9ffd-fcc757f6a475",
+      "name": "Gmail",
+      "webhookId": "162c3e1b-9519-4e58-9318-b5bf09edc44d",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "CpQJp5EPTNkAFoMG",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://dhivyalakshmi.app.n8n.cloud/mcp/fe79e86a-8e1c-4113-a16b-e30fc06deabf",
+        "include": "selected",
+        "includeTools": [
+          "Create_a_draft_in_Gmail"
+        ],
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.4,
+      "position": [
+        2400,
+        928
+      ],
+      "id": "4f6b985b-d032-4c84-94d1-4bba4686b1c9",
+      "name": "MCP Client1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Client": {
+      "ai_tool": [
+        [
+          {
+            "node": "Gmail",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Prepare",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stats": {
+      "main": [
+        [
+          {
+            "node": "Page1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NSE_Text": {
+      "main": [
+        [
+          {
+            "node": "Bundle",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bundle": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Page1": {
+      "main": [
+        [
+          {
+            "node": "NSE_Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        []
+      ]
+    },
+    "Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Client1": {
+      "ai_tool": [
+        [
+          {
+            "node": "Gmail",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "1b05a642-2447-4614-bfa6-9d9a5f69384e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "508ecf2357e36ed51c0cd10c51bfc5651bcc20abba71f72fa40454007a115830"
+  },
+  "nodeGroups": [],
+  "id": "YNYDEivAk87XOMBE",
+  "tags": []
+}

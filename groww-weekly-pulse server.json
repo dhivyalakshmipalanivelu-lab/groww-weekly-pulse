@@ -1,0 +1,112 @@
+{
+  "name": "groww-weekly-pulse server",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "fe79e86a-8e1c-4113-a16b-e30fc06deabf"
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "8c45e12d-120b-47a5-abf9-dbb89ee95b07",
+      "name": "MCP Server Trigger",
+      "webhookId": "fe79e86a-8e1c-4113-a16b-e30fc06deabf"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Creates a Gmail draft with the weekly pulse and fee explanation. Never sends.",
+        "resource": "draft",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', ``, 'string') }}",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        16,
+        208
+      ],
+      "id": "434d3cd5-7ef0-45c5-9bf9-69830007166a",
+      "name": "create_email_draft",
+      "webhookId": "a13c6311-87f8-4cb0-88ee-4a32f472d520",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "CpQJp5EPTNkAFoMG",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Appends the weekly pulse entry to the Groww log document.",
+        "operation": "update",
+        "documentURL": "https://docs.google.com/document/d/1J_i_2CSt0l0xy_vZYeZTxG05jFQPTTPv4iLwUm1Eppg/edit?usp=sharing",
+        "actionsUi": {
+          "actionFields": [
+            {
+              "action": "insert",
+              "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('actionFields0_Old_Text', ``, 'string') }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.googleDocsTool",
+      "typeVersion": 2,
+      "position": [
+        288,
+        192
+      ],
+      "id": "c4ce7b43-d086-4f96-a557-ddb5207b98a4",
+      "name": "append_to_log",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "vkR7IChvabSnnUug",
+          "name": "Google Docs account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "create_email_draft": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "append_to_log": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "13b953f2-2bec-412a-bb12-48f9143937b8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "508ecf2357e36ed51c0cd10c51bfc5651bcc20abba71f72fa40454007a115830"
+  },
+  "nodeGroups": [],
+  "id": "PiNkhyAchdLBjZUI",
+  "tags": []
+}
